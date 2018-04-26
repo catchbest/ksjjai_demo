@@ -321,6 +321,7 @@ void CKSJJAIDemoDlg::OnCbnSelchangeComboCamera()
 	pComboBox = (CComboBox*)GetDlgItem(IDC_COMBO_CAMERA);
 	m_CameraCurSel = pComboBox->GetCurSel();
 	UpdateUi();
+	OnBnClickedButtonStop();
 }
 
 void CKSJJAIDemoDlg::OnBnClickedButtonStart()
@@ -369,6 +370,8 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 			retval = J_Image_OpenStream(m_hCam[m_CameraCurSel], 0, reinterpret_cast<J_IMG_CALLBACK_OBJECT>(this), reinterpret_cast<J_IMG_CALLBACK_FUNCTION>(&CKSJJAIDemoDlg::StreamCBFunc1), &m_hThread[m_CameraCurSel], (ViewSize.cx*ViewSize.cy*bpp) / 8);
 			if (retval != J_ST_SUCCESS) {
 				AfxMessageBox(CString("Could not open stream!"), MB_OK | MB_ICONEXCLAMATION);
+				OnBnClickedButtonStop();
+				return;
 			}
 			TRACE("Opening stream succeeded\n");
 		}
@@ -377,6 +380,8 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 			retval = J_Image_OpenStream(m_hCam[m_CameraCurSel], 0, reinterpret_cast<J_IMG_CALLBACK_OBJECT>(this), reinterpret_cast<J_IMG_CALLBACK_FUNCTION>(&CKSJJAIDemoDlg::StreamCBFunc2), &m_hThread[m_CameraCurSel], (ViewSize.cx*ViewSize.cy*bpp) / 8);
 			if (retval != J_ST_SUCCESS) {
 				AfxMessageBox(CString("Could not open stream!"), MB_OK | MB_ICONEXCLAMATION);
+				OnBnClickedButtonStop();
+				return;
 			}
 			TRACE("Opening stream succeeded\n");
 		}
@@ -400,7 +405,7 @@ void CKSJJAIDemoDlg::StreamCBFunc1(J_tIMAGE_INFO * pAqImageInfo)
 	{
 		// Shows image
 		J_Image_ShowImage(m_hView[0], pAqImageInfo);
-		J_Image_SaveFileEx(pAqImageInfo, _T("c:\\Camera1.bmp"), J_FF_BMP);
+		//J_Image_SaveFileEx(pAqImageInfo, _T("c:\\Camera1.bmp"), J_FF_BMP);
 	}
 }
 
@@ -417,7 +422,7 @@ void CKSJJAIDemoDlg::StreamCBFunc2(J_tIMAGE_INFO * pAqImageInfo)
 	{
 		// Shows image
 		J_Image_ShowImage(m_hView[1], pAqImageInfo);
-		J_Image_SaveFileEx(pAqImageInfo, _T("c:\\Camera2.bmp"), J_FF_BMP);
+		//J_Image_SaveFileEx(pAqImageInfo, _T("c:\\Camera2.bmp"), J_FF_BMP);
 	}
 }
 
@@ -458,7 +463,7 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStop()
 void CKSJJAIDemoDlg::OnDestroy()
 {
 	CDialogEx::OnDestroy();
-
+	OnBnClickedButtonStop();
 	CloseFactoryAndCamera();
 }
 
@@ -481,6 +486,7 @@ void CKSJJAIDemoDlg::UpdateUi()
 		pSpinCtrl->SetPos32(int64Val);
 	}
 
+#ifdef VERSION2
 	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_GAIN, &hNode);
 	if (retval == J_ST_SUCCESS)
 	{
@@ -492,6 +498,17 @@ void CKSJJAIDemoDlg::UpdateUi()
 		pSpinCtrl->SetRange32(min, max);
 		pSpinCtrl->SetPos32(int64Val);
 	}
+#else
+	double dValue;
+	TCHAR szTemp[32] = { 0 };
+	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_GAIN, &hNode);
+	if (retval == J_ST_SUCCESS)
+	{
+		J_Node_GetValueDouble(hNode, FALSE, &dValue);
+		_stprintf_s(szTemp, _T("%3f"), dValue);
+		GetDlgItem(IDC_EDIT_GAIN)->SetWindowText(szTemp);
+	}
+#endif
 
 	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_WIDTH, &hNode);
 	if (retval == J_ST_SUCCESS)
@@ -548,8 +565,15 @@ void CKSJJAIDemoDlg::OnEnChangeEditExposure()
 void CKSJJAIDemoDlg::OnEnChangeEditGain()
 {
 	if (m_CameraCurSel == -1) return;
+#ifdef VERSION2
 	int nValue = GetDlgItemInt(IDC_EDIT_GAIN);
 	J_Camera_SetValueInt64(m_hCam[m_CameraCurSel], NODE_NAME_GAIN, nValue);
+#else
+	TCHAR szTemp[32] = { 0 };
+	GetDlgItem(IDC_EDIT_GAIN)->GetWindowText(szTemp, 32);
+	float fValue = atof(szTemp);
+	J_Camera_SetValueDouble(m_hCam[m_CameraCurSel], NODE_NAME_GAIN, fValue);
+#endif
 }
 
 void CKSJJAIDemoDlg::OnEnChangeEditWidth()

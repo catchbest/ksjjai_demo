@@ -6,12 +6,18 @@
 
 #include <Jai_Factory.h>
 #define MAX_CAMERAS             16
+//#define VERSION2  
 
 #define NODE_NAME_WIDTH         (int8_t*)"Width"
 #define NODE_NAME_HEIGHT        (int8_t*)"Height"
 #define NODE_NAME_PIXELFORMAT   (int8_t*)"PixelFormat"
 #define NODE_NAME_GAIN          (int8_t*)"Gain"
+#ifdef VERSION2
 #define NODE_NAME_EXPOSURE      (int8_t*)"ExposureTimeRaw"
+#else
+#define NODE_NAME_EXPOSURE      (int8_t*)"ExposureTime"
+#endif
+
 #define NODE_NAME_ACQSTART      (int8_t*)"AcquisitionStart"
 #define NODE_NAME_ACQSTOP       (int8_t*)"AcquisitionStop"
 #define NODE_NAME_TRIGGERMODE   (int8_t*)"TriggerMode"
