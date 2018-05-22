@@ -82,6 +82,8 @@ BEGIN_MESSAGE_MAP(CKSJJAIDemoDlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_COMBO_TRIGGERSOURCE, &CKSJJAIDemoDlg::OnCbnSelchangeComboTriggersource)
 	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CKSJJAIDemoDlg::OnBnClickedButtonSave)
 	ON_BN_CLICKED(IDC_BUTTON_LOAD, &CKSJJAIDemoDlg::OnBnClickedButtonLoad)
+	ON_CBN_SELCHANGE(IDC_COMBO_CAPTURE, &CKSJJAIDemoDlg::OnCbnSelchangeComboCapture)
+	ON_BN_CLICKED(IDC_BUTTON_SOFTWARE, &CKSJJAIDemoDlg::OnBnClickedButtonSoftware)
 END_MESSAGE_MAP()
 
 
@@ -144,6 +146,13 @@ BOOL CKSJJAIDemoDlg::OnInitDialog()
 	for (int i = 0; i < 2; i++)
 	{
 		pComboBox->AddString(strTriggerSource[i]);
+	}
+
+	pComboBox = (CComboBox*)GetDlgItem(IDC_COMBO_CAPTURE);
+	CString strCapture[2] = { _T("SingleFrame"), _T("Continuous") };
+	for (int i = 0; i < 2; i++)
+	{
+		pComboBox->AddString(strCapture[i]);
 	}
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -389,7 +398,7 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 		retval = J_Camera_ExecuteCommand(m_hCam[m_CameraCurSel], NODE_NAME_ACQSTART);
 	}
 	
-
+	GetDlgItem(IDC_COMBO_CAPTURE)->EnableWindow(FALSE);
 	//EnableControls(TRUE, TRUE);
 }
 
@@ -457,6 +466,13 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStop()
 		}
 	}
 	
+	GetDlgItem(IDC_COMBO_CAPTURE)->EnableWindow(TRUE);
+}
+
+
+void CKSJJAIDemoDlg::OnBnClickedButtonSoftware()
+{
+	J_Camera_ExecuteCommand(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONSTART);
 }
 
 
@@ -553,6 +569,21 @@ void CKSJJAIDemoDlg::UpdateUi()
 		J_Node_GetValueInt64(hNode, FALSE, &int64Val);
 		pComboBox->SetCurSel(int64Val);
 	}
+
+	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONMODE, &hNode);
+	if (retval == J_ST_SUCCESS)
+	{
+		CComboBox    *pComboBox = NULL;
+		pComboBox = (CComboBox*)GetDlgItem(IDC_COMBO_CAPTURE);
+
+		J_Node_GetValueInt64(hNode, FALSE, &int64Val);
+		if (int64Val == 2)
+		{
+			int64Val--;
+		}
+
+		pComboBox->SetCurSel(int64Val);
+	}
 }
 
 void CKSJJAIDemoDlg::OnEnChangeEditExposure()
@@ -601,6 +632,21 @@ void CKSJJAIDemoDlg::OnCbnSelchangeComboTriggermode()
 }
 
 
+void CKSJJAIDemoDlg::OnCbnSelchangeComboCapture()
+{
+	if (m_CameraCurSel == -1) return;
+	CComboBox    *pComboBox = NULL;
+	pComboBox = (CComboBox*)GetDlgItem(IDC_COMBO_CAPTURE);
+	int nValue = pComboBox->GetCurSel();
+	if (nValue != 0)
+	{
+		nValue++;
+	}
+
+	J_Camera_SetValueInt64(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONMODE, nValue);
+}
+
+
 void CKSJJAIDemoDlg::OnCbnSelchangeComboTriggersource()
 {
 	if (m_CameraCurSel == -1) return;
@@ -624,3 +670,6 @@ void CKSJJAIDemoDlg::OnBnClickedButtonLoad()
 	J_Camera_ExecuteCommand(m_hCam[m_CameraCurSel], NODE_NAME_LOAD);
 	UpdateUi();
 }
+
+
+

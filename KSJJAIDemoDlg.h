@@ -18,12 +18,14 @@
 #define NODE_NAME_EXPOSURE      (int8_t*)"ExposureTime"
 #endif
 
-#define NODE_NAME_ACQSTART      (int8_t*)"AcquisitionStart"
-#define NODE_NAME_ACQSTOP       (int8_t*)"AcquisitionStop"
-#define NODE_NAME_TRIGGERMODE   (int8_t*)"TriggerMode"
-#define NODE_NAME_TRIGGERSOURCE (int8_t*)"TriggerSource"
-#define NODE_NAME_SAVE			(int8_t*)"UserSetSave"
-#define NODE_NAME_LOAD			(int8_t*)"UserSetLoad"
+#define NODE_NAME_ACQSTART			(int8_t*)"AcquisitionStart"
+#define NODE_NAME_ACQSTOP			(int8_t*)"AcquisitionStop"
+#define NODE_NAME_TRIGGERMODE		(int8_t*)"TriggerMode"
+#define NODE_NAME_TRIGGERSOURCE     (int8_t*)"TriggerSource"
+#define NODE_NAME_ACQUISITIONMODE   (int8_t*)"AcquisitionMode"
+#define NODE_NAME_ACQUISITIONSTART  (int8_t*)"AcquisitionStart"
+#define NODE_NAME_SAVE			    (int8_t*)"UserSetSave"
+#define NODE_NAME_LOAD			    (int8_t*)"UserSetLoad"
 // CKSJJAIDemoDlg ¶Ô»°¿ò
 class CKSJJAIDemoDlg : public CDialogEx
 {
@@ -71,4 +73,6 @@ public:
 	afx_msg void OnCbnSelchangeComboTriggersource();
 	afx_msg void OnBnClickedButtonSave();
 	afx_msg void OnBnClickedButtonLoad();
+	afx_msg void OnCbnSelchangeComboCapture();
+	afx_msg void OnBnClickedButtonSoftware();
 };
