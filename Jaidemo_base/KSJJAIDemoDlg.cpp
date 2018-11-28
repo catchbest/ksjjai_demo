@@ -59,6 +59,8 @@ CKSJJAIDemoDlg::CKSJJAIDemoDlg(CWnd* pParent /*=NULL*/)
 		m_hThread[i] = NULL;
 	}
 	m_CameraCurSel = -1;
+	m_nCount = 0;
+	m_bImage = false;
 }
 
 void CKSJJAIDemoDlg::DoDataExchange(CDataExchange* pDX)
@@ -84,6 +86,7 @@ BEGIN_MESSAGE_MAP(CKSJJAIDemoDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_LOAD, &CKSJJAIDemoDlg::OnBnClickedButtonLoad)
 	ON_CBN_SELCHANGE(IDC_COMBO_CAPTURE, &CKSJJAIDemoDlg::OnCbnSelchangeComboCapture)
 	ON_BN_CLICKED(IDC_BUTTON_SOFTWARE, &CKSJJAIDemoDlg::OnBnClickedButtonSoftware)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -414,6 +417,7 @@ void CKSJJAIDemoDlg::StreamCBFunc1(J_tIMAGE_INFO * pAqImageInfo)
 	{
 		// Shows image
 		J_Image_ShowImage(m_hView[0], pAqImageInfo);
+		m_bImage = true;
 		//J_Image_SaveFileEx(pAqImageInfo, _T("c:\\Camera1.bmp"), J_FF_BMP);
 	}
 }
@@ -670,6 +674,4 @@ void CKSJJAIDemoDlg::OnBnClickedButtonLoad()
 	J_Camera_ExecuteCommand(m_hCam[m_CameraCurSel], NODE_NAME_LOAD);
 	UpdateUi();
 }
-
-
 
