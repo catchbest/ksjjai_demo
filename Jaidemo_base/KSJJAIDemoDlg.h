@@ -11,11 +11,13 @@
 #define NODE_NAME_WIDTH         (int8_t*)"Width"
 #define NODE_NAME_HEIGHT        (int8_t*)"Height"
 #define NODE_NAME_PIXELFORMAT   (int8_t*)"PixelFormat"
-#define NODE_NAME_GAIN          (int8_t*)"Gain"
+
 #ifdef VERSION2
 #define NODE_NAME_EXPOSURE      (int8_t*)"ExposureTimeRaw"
+#define NODE_NAME_GAIN          (int8_t*)"GainRaw"
 #else
 #define NODE_NAME_EXPOSURE      (int8_t*)"ExposureTime"
+#define NODE_NAME_GAIN          (int8_t*)"Gain"
 #endif
 
 #define NODE_NAME_ACQSTART			(int8_t*)"AcquisitionStart"
@@ -45,6 +47,7 @@ public:
 	VIEW_HANDLE     m_hView[MAX_CAMERAS];   // View Window handles
 	THRD_HANDLE     m_hThread[MAX_CAMERAS]; // Stream handles
 	int8_t          m_sCameraId[MAX_CAMERAS][J_CAMERA_ID_SIZE]; // Camera IDs
+	int8_t			m_sIP[MAX_CAMERAS][J_CAMERA_INFO_SIZE];
 	void StreamCBFunc1(J_tIMAGE_INFO * pAqImageInfo);
 	void StreamCBFunc2(J_tIMAGE_INFO * pAqImageInfo);
 // й╣ож

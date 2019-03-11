@@ -206,12 +206,16 @@ BOOL CKSJJAIDemoDlg::OpenFactoryAndCamera()
 
 	bool bFdUse = false;
 	int	iValidCamera = 0;
-
+	
 	for (int i = 0; i < (int)iNumDev; i++)
 	{
 		// Get camera IDs
 		iSize = J_CAMERA_ID_SIZE;
 		m_sCameraId[iValidCamera][0] = 0;
+		
+		uint32_t size;
+		
+		//J_Factory_GetCameraInfo(m_hFactory, &a, CAM_INFO_IP, m_sCameraId[iValidCamera], &iSize);
 		retval = J_Factory_GetCameraIDByIndex(m_hFactory, i, m_sCameraId[iValidCamera], &iSize);
 		if (retval != J_ST_SUCCESS)
 		{
@@ -230,6 +234,8 @@ BOOL CKSJJAIDemoDlg::OpenFactoryAndCamera()
 				AfxMessageBox(CString("Could not open the camera!"), MB_OK | MB_ICONEXCLAMATION);
 				return FALSE;
 			}
+
+			J_Factory_GetCameraInfo(m_hFactory, m_sCameraId[iValidCamera], CAM_INFO_IP, m_sIP[iValidCamera], &size);//»ñÈ¡IPµØÖ·
 			iValidCamera++;
 			TRACE("Opening camera %d succeeded\n", iValidCamera);
 		}
@@ -493,7 +499,7 @@ void CKSJJAIDemoDlg::UpdateUi()
 	J_STATUS_TYPE   retval;
 	NODE_HANDLE hNode;
 	int64_t int64Val, max, min;
-
+	GetDlgItem(IDC_STATIC_IP)->SetWindowText((char*)m_sIP[m_CameraCurSel]);
 	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_EXPOSURE, &hNode);
 	if (retval == J_ST_SUCCESS)
 	{
