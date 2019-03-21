@@ -63,6 +63,8 @@ CKSJJAIDemoDlg::CKSJJAIDemoDlg(CWnd* pParent /*=NULL*/)
 		m_hThread[i] = NULL;
 	}
 	m_CameraCurSel = 0;
+	m_pRGBBuffer1 = NULL;
+	m_pRGBBuffer2 = NULL;
 }
 
 void CKSJJAIDemoDlg::DoDataExchange(CDataExchange* pDX)
@@ -448,10 +450,22 @@ LRESULT CKSJJAIDemoDlg::OnMsgSetPIC(WPARAM wParam, LPARAM lParam)
 {
 	if (WAIT_OBJECT_0 != WaitForSingleObject(m_hSetCaptureFovEvent, 0)) return 0;
 
-	//if (m_bStop) return 0;
 	EnterCriticalSection(&m_cs);
 	J_tIMAGE_INFO* pAqImageInfo = (J_tIMAGE_INFO*)lParam;
-	m_SnapStatic.LoadImage(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, 8);
+	if (pAqImageInfo->iPixelType == 0x108000a)
+	{
+#ifdef _WIN64
+		KSJCFA_Bilinear_GBRG_Flip(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, m_pRGBBuffer1, 24);
+#else
+		BayerFilterGBRG24(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, m_pRGBBuffer1);
+#endif
+		m_SnapStatic.LoadImage(m_pRGBBuffer1, m_nCaptureWidth, m_nCaptureHeight, 24);
+	}
+	else
+	{
+		m_SnapStatic.LoadImage(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, 8);
+	}
+	
 	LeaveCriticalSection(&m_cs);
 	return 0;
 }
@@ -460,10 +474,22 @@ LRESULT CKSJJAIDemoDlg::OnMsgSetPIC2(WPARAM wParam, LPARAM lParam)
 {
 	if (WAIT_OBJECT_0 != WaitForSingleObject(m_hSetCaptureFovEvent2, 0)) return 0;
 
-	//if (m_bStop) return 0;
 	EnterCriticalSection(&m_cs2);
 	J_tIMAGE_INFO* pAqImageInfo = (J_tIMAGE_INFO*)lParam;
-	m_SnapStatic2.LoadImage(pAqImageInfo->pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, 8);
+	if (pAqImageInfo->iPixelType == 0x108000a)
+	{
+#ifdef _WIN64
+		KSJCFA_Bilinear_GBRG_Flip(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, m_pRGBBuffer1, 24);
+#else
+		BayerFilterGBRG24(pAqImageInfo->pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, m_pRGBBuffer2);
+#endif
+		m_SnapStatic.LoadImage(m_pRGBBuffer2, m_nCaptureWidth2, m_nCaptureHeight2, 24);
+	}
+	else
+	{
+		m_SnapStatic.LoadImage(pAqImageInfo->pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, 8);
+	}
+
 	LeaveCriticalSection(&m_cs2);
 	return 0;
 }
@@ -478,6 +504,18 @@ void CKSJJAIDemoDlg::OnDestroy()
 	DeleteCriticalSection(&m_cs2);
 	CloseHandle(m_hSetCaptureFovEvent);
 	CloseHandle(m_hSetCaptureFovEvent2);
+
+	if (m_pRGBBuffer1 != NULL)
+	{
+		delete[] m_pRGBBuffer1;
+		m_pRGBBuffer1 = NULL;
+	}
+
+	if (m_pRGBBuffer2 != NULL)
+	{
+		delete[] m_pRGBBuffer2;
+		m_pRGBBuffer2 = NULL;
+	}
 }
 
 
@@ -593,6 +631,28 @@ void CKSJJAIDemoDlg::UpdateUi()
 		}
 
 		pComboBox->SetCurSel(int64Val);
+	}
+
+	if (m_CameraCount >=1)
+	{
+		if (m_pRGBBuffer1 != NULL)
+		{
+			delete[] m_pRGBBuffer1;
+			m_pRGBBuffer1 = NULL;
+		}
+
+		m_pRGBBuffer1 = new BYTE[m_nCaptureWidth * m_nCaptureHeight * 3];
+	}
+
+	if (m_CameraCount >= 2)
+	{
+		if (m_pRGBBuffer2 != NULL)
+		{
+			delete[] m_pRGBBuffer2;
+			m_pRGBBuffer2 = NULL;
+		}
+
+		m_pRGBBuffer2 = new BYTE[m_nCaptureWidth2 * m_nCaptureHeight2 * 3];
 	}
 }
 

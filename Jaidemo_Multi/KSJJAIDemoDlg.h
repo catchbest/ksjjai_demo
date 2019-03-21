@@ -52,6 +52,8 @@ public:
 	int64_t		m_nCaptureHeight2;
 	HANDLE      m_hSetCaptureFovEvent;
 	HANDLE      m_hSetCaptureFovEvent2;
+	BYTE*  m_pRGBBuffer1;   // 显示时Row转Bayer的内存空间
+	BYTE*  m_pRGBBuffer2;   // 显示时Row转Bayer的内存空间
 // 实现
 protected:
 	HICON m_hIcon;

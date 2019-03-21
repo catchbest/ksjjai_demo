@@ -33,11 +33,13 @@
 
 #include <afxcontrolbars.h>     // 功能区和控件条的 MFC 支持
 
+#include "KSJBayerFilter.Inc/KSJBayerFilter.h"
 
-
-
-
-
+#ifdef _WIN64
+#pragma comment(lib, "KSJBayerFilter.Lib\\SMTd_KSJBayerFilter_x64.lib")
+#else
+#pragma comment(lib, "KSJBayerFilter.Lib\\SMT_KSJBayerFilter_x86.lib")
+#endif
 
 
 

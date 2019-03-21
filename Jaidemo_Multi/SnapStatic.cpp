@@ -84,12 +84,15 @@ void CSnapStatic::LoadImage(BYTE *pImageData, int nCaptureWidth, int nCaptureHei
 	}
 
 	m_pPreviewBmpData = new BYTE[m_pPreviewBmpInfo->bmiHeader.biSizeImage];
-	//memcpy(m_pPreviewBmpData, pImageData, m_pPreviewBmpInfo->bmiHeader.biSizeImage);
-
-	for (int i = 0; i < nCaptureHeight; i++)
+	if (nBitCount == 8)
 	{
-		memcpy(m_pPreviewBmpData + (nCaptureHeight - 1 - i)*nCaptureWidth * (nBitCount >> 3), pImageData + i*nCaptureWidth * (nBitCount >> 3), nCaptureWidth * (nBitCount >> 3));
+		for (int i = 0; i < nCaptureHeight; i++)
+		{
+			memcpy(m_pPreviewBmpData + (nCaptureHeight - 1 - i)*nCaptureWidth * (nBitCount >> 3), pImageData + i*nCaptureWidth * (nBitCount >> 3), nCaptureWidth * (nBitCount >> 3));
+		}
 	}
+	else memcpy(m_pPreviewBmpData, pImageData, m_pPreviewBmpInfo->bmiHeader.biSizeImage);
+	
 
 	Invalidate();
 	UpdateWindow();
