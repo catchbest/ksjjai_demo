@@ -61,6 +61,7 @@ CKSJJAIDemoDlg::CKSJJAIDemoDlg(CWnd* pParent /*=NULL*/)
 	m_CameraCurSel = -1;
 	m_nCount = 0;
 	m_bImage = false;
+	m_ImageBufferInfo.pImageBuffer = NULL;
 }
 
 void CKSJJAIDemoDlg::DoDataExchange(CDataExchange* pDX)
@@ -87,6 +88,8 @@ BEGIN_MESSAGE_MAP(CKSJJAIDemoDlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_COMBO_CAPTURE, &CKSJJAIDemoDlg::OnCbnSelchangeComboCapture)
 	ON_BN_CLICKED(IDC_BUTTON_SOFTWARE, &CKSJJAIDemoDlg::OnBnClickedButtonSoftware)
 	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_CHECK_FRAMERATE, &CKSJJAIDemoDlg::OnBnClickedCheckFramerate)
+	ON_EN_CHANGE(IDC_EDIT_FRAMERATE, &CKSJJAIDemoDlg::OnEnChangeEditFramerate)
 END_MESSAGE_MAP()
 
 
@@ -359,11 +362,11 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 		// Get Width from the camera
 		retval = J_Camera_GetValueInt64(m_hCam[m_CameraCurSel], NODE_NAME_WIDTH, &int64Val);
 		ViewSize.cx = (LONG)int64Val;     // Set window size cx
-
+		m_nCaptureWidth = int64Val;
 		// Get Height from the camera
 		retval = J_Camera_GetValueInt64(m_hCam[m_CameraCurSel], NODE_NAME_HEIGHT, &int64Val);
 		ViewSize.cy = (LONG)int64Val;     // Set window size cy
-
+		m_nCaptureHeight = int64Val;
 		// Set window position
 		TopLeft.x = 10;
 		TopLeft.y = 10 + (m_CameraCurSel*(ViewSize.cy + 25));
@@ -383,7 +386,7 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 		TRACE("Opening view window succeeded\n");
 
 		// Open stream
-		if (m_CameraCurSel == 0)
+		//if (m_CameraCurSel == 0)
 		{
 			retval = J_Image_OpenStream(m_hCam[m_CameraCurSel], 0, reinterpret_cast<J_IMG_CALLBACK_OBJECT>(this), reinterpret_cast<J_IMG_CALLBACK_FUNCTION>(&CKSJJAIDemoDlg::StreamCBFunc1), &m_hThread[m_CameraCurSel], (ViewSize.cx*ViewSize.cy*bpp) / 8);
 			if (retval != J_ST_SUCCESS) {
@@ -393,16 +396,16 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 			}
 			TRACE("Opening stream succeeded\n");
 		}
-		else if (m_CameraCurSel == 1)
-		{
-			retval = J_Image_OpenStream(m_hCam[m_CameraCurSel], 0, reinterpret_cast<J_IMG_CALLBACK_OBJECT>(this), reinterpret_cast<J_IMG_CALLBACK_FUNCTION>(&CKSJJAIDemoDlg::StreamCBFunc2), &m_hThread[m_CameraCurSel], (ViewSize.cx*ViewSize.cy*bpp) / 8);
-			if (retval != J_ST_SUCCESS) {
-				AfxMessageBox(CString("Could not open stream!"), MB_OK | MB_ICONEXCLAMATION);
-				OnBnClickedButtonStop();
-				return;
-			}
-			TRACE("Opening stream succeeded\n");
-		}
+		//else if (m_CameraCurSel == 1)
+		//{
+		//	retval = J_Image_OpenStream(m_hCam[m_CameraCurSel], 0, reinterpret_cast<J_IMG_CALLBACK_OBJECT>(this), reinterpret_cast<J_IMG_CALLBACK_FUNCTION>(&CKSJJAIDemoDlg::StreamCBFunc2), &m_hThread[m_CameraCurSel], (ViewSize.cx*ViewSize.cy*bpp) / 8);
+		//	if (retval != J_ST_SUCCESS) {
+		//		AfxMessageBox(CString("Could not open stream!"), MB_OK | MB_ICONEXCLAMATION);
+		//		OnBnClickedButtonStop();
+		//		return;
+		//	}
+		//	TRACE("Opening stream succeeded\n");
+		//}
 		// Start Acquision
 		retval = J_Camera_ExecuteCommand(m_hCam[m_CameraCurSel], NODE_NAME_ACQSTART);
 	}
@@ -417,6 +420,7 @@ void CKSJJAIDemoDlg::OnBnClickedButtonStart()
 void CKSJJAIDemoDlg::StreamCBFunc1(J_tIMAGE_INFO * pAqImageInfo)
 {
 	// Update timestamp
+	J_STATUS_TYPE iResult;
 	CString timestamp;
 	timestamp.Format(_T("%016llx"), pAqImageInfo->iTimeStamp);
 	if (m_hView[0])
@@ -424,7 +428,31 @@ void CKSJJAIDemoDlg::StreamCBFunc1(J_tIMAGE_INFO * pAqImageInfo)
 		// Shows image
 		J_Image_ShowImage(m_hView[0], pAqImageInfo);
 		m_bImage = true;
-		//J_Image_SaveFileEx(pAqImageInfo, _T("c:\\Camera1.bmp"), J_FF_BMP);
+		if (m_PixelType >= 0x1080008)
+		{
+			// We need to allocate the conversion buffer once
+			if (m_ImageBufferInfo.pImageBuffer == NULL)
+			{
+				iResult = J_Image_Malloc(pAqImageInfo, &m_ImageBufferInfo);
+				if (GC_ERR_SUCCESS != iResult)
+				{
+					OutputDebugString(_T("Error with J_Image_Malloc in CStreamThread::StreamProcess.\n"));
+					return;
+				}
+			}
+
+			// Converts from RAW to internal image before applying the Green-compensation algorithm.
+			iResult = J_Image_FromRawToImageEx(pAqImageInfo, &m_ImageBufferInfo, BAYER_STANDARD_MULTI);
+			if (GC_ERR_SUCCESS != iResult)
+			{
+				OutputDebugString(_T("Error with J_Image_FromRawToImageEx in CStreamThread::StreamProcess.\n"));
+				return;
+			}
+
+			J_Image_SaveFileEx(&m_ImageBufferInfo, _T("Camera1.bmp"), J_FF_BMP);
+		}
+		else
+		J_Image_SaveFileEx(pAqImageInfo, _T("Camera1.bmp"), J_FF_BMP);
 	}
 }
 
@@ -594,6 +622,33 @@ void CKSJJAIDemoDlg::UpdateUi()
 
 		pComboBox->SetCurSel(int64Val);
 	}
+
+	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONFRAMERATEENABLE, &hNode);
+	if (retval == J_ST_SUCCESS)
+	{
+		CComboBox    *pComboBox = NULL;
+		pComboBox = (CComboBox*)GetDlgItem(IDC_COMBO_CAPTURE);
+
+		J_Node_GetValueInt64(hNode, FALSE, &int64Val);
+		((CButton*)GetDlgItem(IDC_CHECK_FRAMERATE))->SetCheck(int64Val);
+	}
+
+	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONFRAMERATE, &hNode);
+	if (retval == J_ST_SUCCESS)
+	{
+		CComboBox    *pComboBox = NULL;
+		pComboBox = (CComboBox*)GetDlgItem(IDC_COMBO_CAPTURE);
+
+		J_Node_GetValueDouble(hNode, FALSE, &dValue);
+		_stprintf_s(szTemp, _T("%.2f"), dValue);
+		GetDlgItem(IDC_EDIT_FRAMERATE)->SetWindowText(szTemp);
+	}
+
+	retval = J_Camera_GetNodeByName(m_hCam[m_CameraCurSel], NODE_NAME_PXIELFORMAT, &hNode);
+	if (retval == J_ST_SUCCESS)
+	{
+		J_Node_GetValueInt64(hNode, FALSE, &m_PixelType);
+	}
 }
 
 void CKSJJAIDemoDlg::OnEnChangeEditExposure()
@@ -681,3 +736,20 @@ void CKSJJAIDemoDlg::OnBnClickedButtonLoad()
 	UpdateUi();
 }
 
+
+
+void CKSJJAIDemoDlg::OnBnClickedCheckFramerate()
+{
+	if (m_CameraCurSel == -1) return;
+	int nValue = ((CButton*)GetDlgItem(IDC_CHECK_FRAMERATE))->GetCheck();
+	J_Camera_SetValueInt64(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONFRAMERATEENABLE, nValue);
+}
+
+
+void CKSJJAIDemoDlg::OnEnChangeEditFramerate()
+{
+	TCHAR szTemp[32] = { 0 };
+	GetDlgItem(IDC_EDIT_FRAMERATE)->GetWindowText(szTemp, 32);
+	float fValue = atof(szTemp);
+	J_Camera_SetValueDouble(m_hCam[m_CameraCurSel], NODE_NAME_ACQUISITIONFRAMERATE, fValue);
+}

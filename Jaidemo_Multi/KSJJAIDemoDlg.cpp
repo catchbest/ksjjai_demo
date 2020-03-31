@@ -65,6 +65,8 @@ CKSJJAIDemoDlg::CKSJJAIDemoDlg(CWnd* pParent /*=NULL*/)
 	m_CameraCurSel = 0;
 	m_pRGBBuffer1 = NULL;
 	m_pRGBBuffer2 = NULL;
+	m_ImageBufferInfo.pImageBuffer = NULL;
+	m_ImageBufferInfo2.pImageBuffer = NULL;
 }
 
 void CKSJJAIDemoDlg::DoDataExchange(CDataExchange* pDX)
@@ -449,17 +451,31 @@ void CKSJJAIDemoDlg::StreamCBFunc2(J_tIMAGE_INFO * pAqImageInfo)
 LRESULT CKSJJAIDemoDlg::OnMsgSetPIC(WPARAM wParam, LPARAM lParam)
 {
 	if (WAIT_OBJECT_0 != WaitForSingleObject(m_hSetCaptureFovEvent, 0)) return 0;
-
+	J_STATUS_TYPE iResult;
 	EnterCriticalSection(&m_cs);
 	J_tIMAGE_INFO* pAqImageInfo = (J_tIMAGE_INFO*)lParam;
-	if (pAqImageInfo->iPixelType == 0x108000a)
+	if (pAqImageInfo->iPixelType >= 0x1080008)
 	{
-#ifdef _WIN64
-		KSJCFA_Bilinear_GBRG_Flip(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, m_pRGBBuffer1, 24);
-#else
-		BayerFilterGBRG24(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, m_pRGBBuffer1);
-#endif
-		m_SnapStatic.LoadImage(m_pRGBBuffer1, m_nCaptureWidth, m_nCaptureHeight, 24);
+		// We need to allocate the conversion buffer once
+		if (m_ImageBufferInfo.pImageBuffer == NULL)
+		{
+			iResult = J_Image_Malloc(pAqImageInfo, &m_ImageBufferInfo);
+			if (GC_ERR_SUCCESS != iResult)
+			{
+				OutputDebugString(_T("Error with J_Image_Malloc in CStreamThread::StreamProcess.\n"));
+				return 0;
+			}
+		}
+
+		// Converts from RAW to internal image before applying the Green-compensation algorithm.
+		iResult = J_Image_FromRawToImageEx(pAqImageInfo, &m_ImageBufferInfo, BAYER_STANDARD_MULTI);
+		if (GC_ERR_SUCCESS != iResult)
+		{
+			OutputDebugString(_T("Error with J_Image_FromRawToImageEx in CStreamThread::StreamProcess.\n"));
+			return 0;
+		}
+
+		m_SnapStatic.LoadImage(m_ImageBufferInfo.pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, 24);
 	}
 	else
 	{
@@ -473,21 +489,35 @@ LRESULT CKSJJAIDemoDlg::OnMsgSetPIC(WPARAM wParam, LPARAM lParam)
 LRESULT CKSJJAIDemoDlg::OnMsgSetPIC2(WPARAM wParam, LPARAM lParam)
 {
 	if (WAIT_OBJECT_0 != WaitForSingleObject(m_hSetCaptureFovEvent2, 0)) return 0;
-
+	J_STATUS_TYPE iResult;
 	EnterCriticalSection(&m_cs2);
 	J_tIMAGE_INFO* pAqImageInfo = (J_tIMAGE_INFO*)lParam;
-	if (pAqImageInfo->iPixelType == 0x108000a)
+	if (pAqImageInfo->iPixelType >= 0x1080008)
 	{
-#ifdef _WIN64
-		KSJCFA_Bilinear_GBRG_Flip(pAqImageInfo->pImageBuffer, m_nCaptureWidth, m_nCaptureHeight, m_pRGBBuffer1, 24);
-#else
-		BayerFilterGBRG24(pAqImageInfo->pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, m_pRGBBuffer2);
-#endif
-		m_SnapStatic.LoadImage(m_pRGBBuffer2, m_nCaptureWidth2, m_nCaptureHeight2, 24);
+		// We need to allocate the conversion buffer once
+		if (m_ImageBufferInfo2.pImageBuffer == NULL)
+		{
+			iResult = J_Image_Malloc(pAqImageInfo, &m_ImageBufferInfo2);
+			if (GC_ERR_SUCCESS != iResult)
+			{
+				OutputDebugString(_T("Error with J_Image_Malloc in CStreamThread::StreamProcess.\n"));
+				return 0;
+			}
+		}
+
+		// Converts from RAW to internal image before applying the Green-compensation algorithm.
+		iResult = J_Image_FromRawToImageEx(pAqImageInfo, &m_ImageBufferInfo2, BAYER_STANDARD_MULTI);
+		if (GC_ERR_SUCCESS != iResult)
+		{
+			OutputDebugString(_T("Error with J_Image_FromRawToImageEx in CStreamThread::StreamProcess.\n"));
+			return 0;
+		}
+
+		m_SnapStatic2.LoadImage(m_ImageBufferInfo2.pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, 24);
 	}
 	else
 	{
-		m_SnapStatic.LoadImage(pAqImageInfo->pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, 8);
+		m_SnapStatic2.LoadImage(pAqImageInfo->pImageBuffer, m_nCaptureWidth2, m_nCaptureHeight2, 8);
 	}
 
 	LeaveCriticalSection(&m_cs2);

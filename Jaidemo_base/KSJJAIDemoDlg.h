@@ -28,6 +28,10 @@
 #define NODE_NAME_ACQUISITIONSTART  (int8_t*)"TriggerSoftware"
 #define NODE_NAME_SAVE			    (int8_t*)"UserSetSave"
 #define NODE_NAME_LOAD			    (int8_t*)"UserSetLoad"
+#define NODE_NAME_PXIELFORMAT       (int8_t*)"PixelFormat"
+
+#define NODE_NAME_ACQUISITIONFRAMERATEENABLE   (int8_t*)"AcquisitionFrameRateEnable"
+#define NODE_NAME_ACQUISITIONFRAMERATE   (int8_t*)"AcquisitionFrameRate"
 // CKSJJAIDemoDlg 对话框
 class CKSJJAIDemoDlg : public CDialogEx
 {
@@ -50,6 +54,10 @@ public:
 	int8_t			m_sIP[MAX_CAMERAS][J_CAMERA_INFO_SIZE];
 	void StreamCBFunc1(J_tIMAGE_INFO * pAqImageInfo);
 	void StreamCBFunc2(J_tIMAGE_INFO * pAqImageInfo);
+	int64_t     m_nCaptureWidth;
+	int64_t		m_nCaptureHeight;
+	J_tIMAGE_INFO m_ImageBufferInfo;
+	int64_t m_PixelType;
 // 实现
 protected:
 	HICON m_hIcon;
@@ -81,4 +89,6 @@ public:
 	afx_msg void OnBnClickedButtonLoad();
 	afx_msg void OnCbnSelchangeComboCapture();
 	afx_msg void OnBnClickedButtonSoftware();
+	afx_msg void OnBnClickedCheckFramerate();
+	afx_msg void OnEnChangeEditFramerate();
 };

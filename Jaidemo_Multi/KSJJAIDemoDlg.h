@@ -54,6 +54,8 @@ public:
 	HANDLE      m_hSetCaptureFovEvent2;
 	BYTE*  m_pRGBBuffer1;   // 显示时Row转Bayer的内存空间
 	BYTE*  m_pRGBBuffer2;   // 显示时Row转Bayer的内存空间
+	J_tIMAGE_INFO m_ImageBufferInfo;
+	J_tIMAGE_INFO m_ImageBufferInfo2;
 // 实现
 protected:
 	HICON m_hIcon;

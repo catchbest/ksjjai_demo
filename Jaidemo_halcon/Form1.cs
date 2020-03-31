@@ -72,6 +72,7 @@ namespace SimpleImageDisplaySample
 
         private void StartButton_Click(object sender, EventArgs e)
         {
+
             if (myCamera != null)
             {
                 int size = (int)(m_nWidth * m_nHeight * 3);
@@ -113,10 +114,11 @@ namespace SimpleImageDisplaySample
             }
             else
             {
-                Jai_FactoryWrapper.J_Image_Malloc(ref ImageInfo, ref m_ConvertedImageInfo);
-                Jai_FactoryWrapper.J_Image_FromRawToImage(ref ImageInfo, ref m_ConvertedImageInfo, 4096, 4096, 4096);
+               
                 if (bCheck)
                 {
+                    Jai_FactoryWrapper.J_Image_Malloc(ref ImageInfo, ref m_ConvertedImageInfo);
+                    Jai_FactoryWrapper.J_Image_FromRawToImage(ref ImageInfo, ref m_ConvertedImageInfo, 4096, 4096, 4096);
                     long counterStart = 0;
                     KSJWin.QueryPerformanceCounter(ref counterStart);
                     int size = (int)(ImageInfo.SizeX * ImageInfo.SizeY * 3);
@@ -149,8 +151,9 @@ namespace SimpleImageDisplaySample
                     HOperatorSet.WriteImage(Hobj, "bmp", 0, "JAIToHalcon.bmp");
                     bCheck = false;
                     CheckBox_SAVE.Checked = false;
+                    Jai_FactoryWrapper.J_Image_Free(ref m_ConvertedImageInfo);
                 }
-                Jai_FactoryWrapper.J_Image_Free(ref m_ConvertedImageInfo);
+                
             }
 
             return;
@@ -242,7 +245,6 @@ namespace SimpleImageDisplaySample
                 m_nWidth = int.Parse(WidthNumericUpDown.Value.ToString());
                 m_nHeight = int.Parse(HeightNumericUpDown.Value.ToString());
                 SetFramegrabberPixelFormat();
-
 
                 myExposureNode = myCamera.GetNode("ExposureTime");
                 if (myExposureNode != null)
@@ -502,5 +504,7 @@ namespace SimpleImageDisplaySample
                 Jai_FactoryWrapper.J_Node_SetValueDouble(hNode, false, value);
             }
         }
+
+
     }
 }
